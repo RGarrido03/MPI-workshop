@@ -3,15 +3,16 @@ import time
 import torch.nn as nn
 from torch import device as Device
 from torch import optim
-from torch.utils.data import DataLoader
+
+from data import get_dataloader
 
 
 def train_model(
     model: nn.Module,
-    dataloader: DataLoader,
     num_epochs: int,
     device: Device,
 ):
+    dataloader = get_dataloader("train")
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0002)
 
