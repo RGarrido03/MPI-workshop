@@ -1,4 +1,4 @@
-from torch import nn as nn, flatten
+from torch import nn, flatten
 from torch.nn import functional as f
 
 
