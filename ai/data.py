@@ -2,17 +2,22 @@ import os
 from typing import Literal
 
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
+from torchvision import transforms
 
-from constants import class_labels
+from constants import class_labels, IMAGE_SIZE
 
 train_dir = "./seg_train"
 test_dir = "./seg_test"
 
+data_transform = transforms.Compose(
+    [transforms.Resize(IMAGE_SIZE), transforms.ToTensor()]
+)
+
 
 class MyDataset(Dataset):
-    def __init__(self, type: Literal["train", "test"], transform=None):
-        self.images_folder = train_dir if type == "train" else test_dir
+    def __init__(self, folder: str, transform=data_transform):
+        self.images_folder = folder
         self.transform = transform
 
         self.df = [
@@ -31,3 +36,10 @@ class MyDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
         return image, label
+
+
+def get_dataloader(
+    mode: Literal["train", "test"], *, batch_size: int = 32, shuffle: bool = True
+) -> DataLoader:
+    dataset = MyDataset(train_dir if mode == "train" else test_dir)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
