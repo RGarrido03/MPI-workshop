@@ -187,3 +187,6 @@ cmake-build-release/
 # Ninja
 build.ninja
 .ninja_*
+
+# Slurm out results
+slurm-*.out
