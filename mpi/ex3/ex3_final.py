@@ -16,3 +16,11 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 N = 10**6
+rank_samples = N // size
+rank_count = monte_carlo_pi_simulation(rank_samples)
+
+total_count = comm.reduce(rank_count, op=MPI.SUM, root=0)
+
+if rank == 0:
+    pi_estimate = (4 * total_count) / N
+    print(f"Estimated pi value: {pi_estimate}")
