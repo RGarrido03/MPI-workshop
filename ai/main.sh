@@ -1,12 +1,12 @@
 #!/bin/bash
 
-#SBATCH -p hpc
+#SBATCH -p gpu
+#SBATCH --gres=gpu
 #SBATCH --ntasks-per-node=8
 #SBATCH --nodes=1
 #SBATCH --qos=normal
 
 module load python/3.10
-module load gcc13/openmpi/4.1.6
+module load udocker/1.3.17
 
-source venv/bin/activate
-python main.py
+udocker run -v ~/MPI-workshop/ai:/app mpi-workshop
