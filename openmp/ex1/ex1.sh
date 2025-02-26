@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#SBATCH -p fct
+#SBATCH -p hpc
 #SBATCH --ntasks-per-node=4
 #SBATCH --nodes=1
-#SBATCH --qos=uvlabuaveiro
+#SBATCH --qos=normal
 
 #
 # Build using:
