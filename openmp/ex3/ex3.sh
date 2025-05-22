@@ -1,9 +1,8 @@
 #!/bin/bash
 
-#SBATCH -p hpc
+#SBATCH -p tuthpc
 #SBATCH --ntasks-per-node=4
 #SBATCH --nodes=1
-#SBATCH --qos=normal
 
 #
 # Build using:

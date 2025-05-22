@@ -10,7 +10,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-dist.init_process_group(backend="mpi")
+# dist.init_process_group(backend="mpi")
 
 model = CNNModel()
 device = torch.device("mps" if torch.backends.mps.is_available() else "cuda")
