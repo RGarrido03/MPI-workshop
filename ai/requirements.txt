@@ -1,6 +1,6 @@
 mpi4py~=4.0.2
 numpy
-torch~=2.6.0
+torch~=2.7.0
 tqdm~=4.67.1
 opencv-python~=4.11.0.86
 pillow~=11.1.0
