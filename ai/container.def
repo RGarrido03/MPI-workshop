@@ -1,0 +1,111 @@
+Bootstrap: docker
+From: nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+Stage: ucxmpi
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/build
+
+%post
+    export MAX_JOBS=72
+    export UCX_VERSION=1.17.0
+    export OPENMPI_VERSION=4.1
+    export OPENMPI_FULL_VERSION=4.1.4
+    apt-get update && apt-get install -y clang make build-essential wget libibverbs-dev
+    cd /opt/build/
+    wget https://github.com/openucx/ucx/releases/download/v${UCX_VERSION}/ucx-${UCX_VERSION}.tar.gz
+    tar -xf ucx-${UCX_VERSION}.tar.gz
+    cd /opt/build/ucx-${UCX_VERSION}/
+    CC=$(which clang) CXX=$(which clang++) ./configure --prefix=/usr/local/ucx \
+        --with-cuda=/usr/local/cuda --disable-optimizations \
+        --disable-logging --disable-debug --disable-assertions --enable-mt --disable-params-check
+    make -j${MAX_JOBS}
+    make install
+    cd /opt/build/
+    wget https://download.open-mpi.org/release/open-mpi/v${OPENMPI_VERSION}/openmpi-${OPENMPI_FULL_VERSION}.tar.bz2
+    tar -xf openmpi-${OPENMPI_FULL_VERSION}.tar.bz2
+    cd /opt/build/openmpi-${OPENMPI_FULL_VERSION}/
+    CC=$(which clang) CXX=$(which clang++) ./configure --prefix=/usr/local/openmpi \
+        --with-cuda=/usr/local/cuda --with-ucx=/usr/local/ucx \
+        --enable-orterun-prefix-by-default --enable-mca-no-build=btl-uct
+    make -j${MAX_JOBS}
+    make install
+
+%test
+    /usr/local/ucx/bin/ucx_info -v
+    /usr/local/openmpi/bin/ompi_info | grep "extensions"
+
+Bootstrap: docker
+From: nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
+Stage: torch
+
+%setup
+    mkdir -p ${SINGULARITY_ROOTFS}/opt/build
+
+%files from ucxmpi
+    /usr/local/ucx /usr/local
+    /usr/local/openmpi /usr/local
+
+%environment
+    export PATH=/usr/local/openmpi/bin:/usr/local/ucx/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:/usr/local/ucx/lib:$LD_LIBRARY_PATH
+
+%post
+    export MAX_JOBS=72
+    export TORCH_VERSION_TAG=v2.4.0
+    export TORCHVISION_VERSION_TAG=v0.19.0
+    export PATH=/usr/local/openmpi/bin:/usr/local/ucx/bin:$PATH
+    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:/usr/local/ucx/lib:$LD_LIBRARY_PATH
+    apt-get update
+    apt-get install -y \
+        clang cmake ninja-build build-essential git \
+        libomp5 libpng16-16 libjpeg-turbo8 libomp-dev libpng-dev libjpeg-turbo8-dev \
+        libnl-3-200 libnl-route-3-200 python3 python3-pip
+    pip install --upgrade pip
+    cd /opt/build/
+    git clone --recursive https://github.com/pytorch/pytorch
+    cd /opt/build/pytorch/
+    git checkout $TORCH_VERSION_TAG
+    git submodule sync
+    git submodule update --init --recursive
+    pip install -r requirements.txt
+    TORCH_CUDA_ARCH_LIST=8.0 \
+    USE_MPI=ON USE_NCCL=OFF USE_GLOO=OFF \
+    CMAKE_C_COMPILER=$(which clang) CMAKE_CXX_COMPILER=$(which clang++) \
+    python3 setup.py build
+    python3 setup.py install
+    cd /opt/build/
+    git clone https://github.com/pytorch/vision.git
+    pip install expecttest flake8 typing mypy pytest pytest-mock scipy requests
+    cd /opt/build/vision/
+    git checkout $TORCHVISION_VERSION_TAG
+    FORCE_CUDA=1 TORCH_CUDA_ARCH_LIST="8.0+PTX" \
+    CC=$(which clang) CXX=$(which clang++) \
+    python3 setup.py build
+    python3 setup.py install
+    rm -rf /opt/build/
+    apt-get remove -y clang cmake ninja-build build-essential git \
+        libomp-dev libpng-dev libjpeg-turbo8-dev
+    apt-get autoremove -y
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+%runscript
+    if [ $# -eq 0 ]; then
+        exec "/bin/bash"
+    else
+        exec "$@"
+    fi
+
+%test
+    printf "torch version: "
+    python3 -c "import torch; print(torch.__version__)"
+    printf "torch.distributed.is_mpi_available(): "
+    python3 -c "import torch; print(torch.distributed.is_mpi_available())"
+    printf "torchvision version: "
+    python3 -c "import torchvision; print(torchvision.__version__)"
+
+%labels
+    Author seieric
+    Version v1.0.0
+
+%help
+    See https://github.com/seieric/pytorch-mpi-singularity
