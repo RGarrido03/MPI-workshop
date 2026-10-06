@@ -1,21 +1,21 @@
 #!/bin/bash
 
-#SBATCH -p tuthpc
-#SBATCH --ntasks-per-node=4
+#SBATCH -p dev-x86
+#SBATCH -A F202316480ICDTF2X
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
 #SBATCH --nodes=1
+#SBATCH --mem=512M
 
 #
 # Build using:
-# module load gcc-14.1
+# module load GCC/15.2.0 CMake/4.2.1-GCCcore-15.2.0
 # cmake --build .
 #
 # or:
-# module load gcc-14.1
+# module load GCC/15.2.0 CMake/4.2.1-GCCcore-15.2.0
 # cmake .
 # make
 #
 
-export MODULEPATH="/etc/scl/modulefiles:/cvmfs/sw.el8/modules/hpc/main:/cvmfs/sw.el8/modules/hpc/aoc40:/cvmfs/sw.el8/modules/hpc/gcc85:/cvmfs/sw.el8/modules/hpc/gcc11:/cvmfs/sw.el8/modules/hpc/gcc13:/cvmfs/sw.el8/modules/hpc/intel:/cvmfs/sw.el8/modules/gpu:/cvmfs/sw.el8/modules/ml:/cvmfs/sw.el8/modules/bio"
-
-module load gcc-14.1
-./ex2
+srun -n 1 -c 4 ./ex2

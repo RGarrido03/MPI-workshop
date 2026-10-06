@@ -1,13 +1,14 @@
 #!/bin/bash
 
-#SBATCH -p tuthpc
+#SBATCH -p dev-x86
+#SBATCH -A F202316480ICDTF2X
 #SBATCH --ntasks-per-node=4
+#SBATCH --cpus-per-task=1
 #SBATCH --nodes=1
+#SBATCH --mem=512M
 
-export MODULEPATH="/etc/scl/modulefiles:/cvmfs/sw.el8/modules/hpc/main:/cvmfs/sw.el8/modules/hpc/aoc40:/cvmfs/sw.el8/modules/hpc/gcc85:/cvmfs/sw.el8/modules/hpc/gcc11:/cvmfs/sw.el8/modules/hpc/gcc13:/cvmfs/sw.el8/modules/hpc/intel:/cvmfs/sw.el8/modules/gpu:/cvmfs/sw.el8/modules/ml:/cvmfs/sw.el8/modules/bio"
+module load Python/3.14.2-GCCcore-15.2.0
+module load OpenMPI/5.0.10-GCC-15.2.0
 
-module load python/3.10
-module load gcc13/openmpi/4.1.6
-
-source ../venv/bin/activate
+source ../.venv/bin/activate
 mpiexec -np "$SLURM_NTASKS" python ex3.py
